@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: platform-webhook
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  route:
+    receiver: webhook-sink
+    groupBy: ['alertname']
+    groupWait: 10s
+    groupInterval: 10s
+    repeatInterval: 5m
+    matchers:
+      - name: severity
+        value: critical
+  receivers:
+    - name: webhook-sink
+      webhookConfigs:
+        - url: 'http://webhook-sink.default.svc.cluster.local/'
+          sendResolved: true
