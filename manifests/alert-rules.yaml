@@ -14,6 +14,7 @@ spec:
           for: 30s
           labels:
             severity: critical
+            namespace: monitoring
           annotations:
             summary: "Stub model has no available replicas"
             description: "The stub-model deployment has fewer than 1 available replica."
