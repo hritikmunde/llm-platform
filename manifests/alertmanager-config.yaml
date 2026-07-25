@@ -18,5 +18,5 @@ spec:
   receivers:
     - name: webhook-sink
       webhookConfigs:
-        - url: 'http://webhook-sink.default.svc.cluster.local/'
+        - url: 'http://remediation-agent.default.svc.cluster.local/alert'
           sendResolved: true
