@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: platform.rules
+      rules:
+        - alert: StubModelDown
+          expr: kube_deployment_status_replicas_available{deployment="stub-model"} < 1
+          for: 30s
+          labels:
+            severity: critical
+          annotations:
+            summary: "Stub model has no available replicas"
+            description: "The stub-model deployment has fewer than 1 available replica."
