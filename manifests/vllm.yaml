@@ -32,6 +32,8 @@ spec:
             - "8192"
             - "--gpu-memory-utilization"
             - "0.85"
+            - "--dtype"
+            - "half"
           ports:
             - containerPort: 8000
           resources:
