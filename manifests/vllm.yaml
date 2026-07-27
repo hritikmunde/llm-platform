@@ -34,6 +34,9 @@ spec:
             - "0.85"
             - "--dtype"
             - "half"
+            - "--enable-auto-tool-choice"
+            - "--tool-call-parser"
+            - "hermes"
           ports:
             - containerPort: 8000
           resources:
