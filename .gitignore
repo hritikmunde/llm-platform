@@ -1,2 +1,65 @@
+# ---- secrets & credentials (NEVER commit) ----
 .github_token
+*.token
+*_token
+.env
+.env.*
+*.pem
+*.key
+credentials
+aws-credentials*
+kubeconfig
+*.kubeconfig
+
+# ---- Terraform ----
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+tfplan
+*.tfplan
+
+# ---- Python (agent) ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
 venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Docker ----
+*.tar
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.iml
+
+# ---- logs & scratch ----
+*.log
+tmp/
+.tmp/
+scratch/
