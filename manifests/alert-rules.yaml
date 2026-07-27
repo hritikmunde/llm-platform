@@ -15,6 +15,6 @@ spec:
           labels:
             severity: critical
             namespace: default
-            annotations:
-              summary: "vLLM has no available replicas"
-              description: "The vLLM deployment has fewer than 1 available replica."
+          annotations:
+            summary: "vLLM has no available replicas"
+            description: "The vLLM deployment has fewer than 1 available replica."
