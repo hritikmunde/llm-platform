@@ -30,11 +30,11 @@ spec:
               value: "False"              # skip login for a local demo
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
+              cpu: "250m"
+              memory: "1Gi"
             limits:
-              cpu: "500m"
-              memory: "512Mi"
+              cpu: "1000m"
+              memory: "2Gi"
 ---
 apiVersion: v1
 kind: Service
