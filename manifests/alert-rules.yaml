@@ -18,3 +18,13 @@ spec:
           annotations:
             summary: "vLLM has no available replicas"
             description: "The vLLM deployment has fewer than 1 available replica."
+        - alert: VLLMCrashLooping
+          expr: max by (namespace) (kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", namespace="default"}) > 0
+          for: 1m
+          labels:
+            severity: critical
+            deployment: vllm
+            namespace: default
+          annotations:
+            summary: "vLLM is crash-looping"
+            description: "A vLLM container in default is in CrashLoopBackOff — likely a bad config."
