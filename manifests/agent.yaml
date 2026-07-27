@@ -48,7 +48,7 @@ spec:
       serviceAccountName: remediation-agent
       containers:
         - name: agent
-          image: 442042529210.dkr.ecr.us-east-1.amazonaws.com/remediation-agent:v1
+          image: 442042529210.dkr.ecr.us-east-1.amazonaws.com/remediation-agent:v2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
