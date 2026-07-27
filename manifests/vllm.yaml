@@ -48,10 +48,13 @@ kind: Service
 metadata:
   name: vllm-svc
   namespace: default
+  labels:
+    app: vllm
 spec:
   selector:
     app: vllm
   ports:
-    - port: 80
+    - name: http
+      port: 80
       targetPort: 8000
 
