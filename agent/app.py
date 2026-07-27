@@ -37,8 +37,10 @@ def load_kube():
 def get_pod_logs(deployment, namespace, tail=50):
     load_kube()
     v1 = client.CoreV1Api()
-    pods = v1.list_namespaced_pod(namespace=namespace).items
-    matching = [p for p in pods if p.metadata.name.startswith(deployment + "-")]
+    #pods = v1.list_namespaced_pod(namespace=namespace).items
+    #matching = [p for p in pods if p.metadata.name.startswith(deployment + "-")]
+    pods = v1.list_namespaced_pod(namespace=namespace, label_selector=f"app={deployment}").items
+    matching = pods
     if not matching:
         return f"No pods found for deployment '{deployment}' in namespace '{namespace}'."
     out = []
