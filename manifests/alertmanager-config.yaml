@@ -7,7 +7,7 @@ metadata:
     release: monitoring
 spec:
   route:
-    receiver: webhook-sink
+    receiver: remediation-agent
     groupBy: ['alertname']
     groupWait: 10s
     groupInterval: 10s
@@ -16,7 +16,7 @@ spec:
       - name: severity
         value: critical
   receivers:
-    - name: webhook-sink
+    - name: remediation-agent
       webhookConfigs:
         - url: 'http://remediation-agent.default.svc.cluster.local/alert'
           sendResolved: true
