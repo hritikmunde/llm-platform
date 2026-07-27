@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  body { margin: 0; background: #070b14; }
+  a { color: #6ea8ff; text-decoration: none; }
+  a:hover { color: #45d6c8; }
+</style>
+</helmet>
+<div style="position:relative;width:1680px;height:1100px;box-sizing:border-box;background:radial-gradient(1200px 700px at 68% 12%, #101a2c 0%, #0a1120 45%, #070b14 100%);font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;overflow:hidden">
+
+  <svg viewBox="0 0 1680 1100" style="position:absolute;left:0;top:0;width:1680px;height:1100px">
+    <defs>
+      <marker id="ah-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#45d6c8"></path></marker>
+      <marker id="ah-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#edb254"></path></marker>
+      <marker id="ah-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#b98cf2"></path></marker>
+      <marker id="ah-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#6ea8ff"></path></marker>
+      <marker id="ah-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7d8da6"></path></marker>
+    </defs>
+
+    <path d="M346 636 H444" fill="none" stroke="#45d6c8" stroke-width="2" marker-end="url(#ah-teal)"></path>
+    <path d="M542 574 V484" fill="none" stroke="#45d6c8" stroke-width="2" marker-end="url(#ah-teal)"></path>
+
+    <path d="M765 480 V572" fill="none" stroke="#edb254" stroke-width="2" marker-end="url(#ah-amber)"></path>
+    <path d="M765 684 V734" fill="none" stroke="#edb254" stroke-width="2" marker-end="url(#ah-amber)"></path>
+    <path d="M850 632 H944" fill="none" stroke="#edb254" stroke-width="2" marker-end="url(#ah-amber)"></path>
+
+    <path d="M1035 684 V734" fill="none" stroke="#b98cf2" stroke-width="2" marker-end="url(#ah-violet)"></path>
+    <path d="M1188 792 H1324" fill="none" stroke="#b98cf2" stroke-width="2" marker-end="url(#ah-violet)"></path>
+    <path d="M1100 844 V876 H1440 V894" fill="none" stroke="#b98cf2" stroke-width="2" stroke-linejoin="round" marker-end="url(#ah-violet)"></path>
+
+    <path d="M1330 940 H758" fill="none" stroke="#6ea8ff" stroke-width="2" marker-end="url(#ah-blue)"></path>
+    <path d="M602 900 V876" fill="none" stroke="#6ea8ff" stroke-width="2" marker-end="url(#ah-blue)"></path>
+
+    <path d="M1477 1000 V1046 H352 V676" fill="none" stroke="#7d8da6" stroke-width="1.5" stroke-dasharray="7 6" stroke-linejoin="round" marker-end="url(#ah-slate)"></path>
+  </svg>
+
+  <div style="position:absolute;left:56px;top:44px;width:1140px">
+    <div style="color:#eef3fa;font-size:44px;font-weight:600;letter-spacing:-0.022em;line-height:1.05">Self-Healing LLM Inference Platform</div>
+    <div style="margin-top:14px;color:#8494ad;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:15px;letter-spacing:0.01em">AWS EKS · vLLM serving · Prometheus observability · AIOps remediation agent · GitOps</div>
+    <div style="margin-top:16px;display:flex;align-items:center;gap:10px;color:#45d6c8;font-size:15px;font-weight:500;letter-spacing:0.01em"><span style="width:26px;height:1px;background:#45d6c8;opacity:.6"></span>It serves an LLM — and heals itself: detect → diagnose → propose → review → reconcile</div>
+  </div>
+
+  <div style="position:absolute;left:1330px;top:48px;width:294px;box-sizing:border-box;padding:18px 20px 16px;background:rgba(16,24,39,.72);border:1px solid #212f47;border-radius:14px">
+    <div style="color:#6d7d96;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase">Legend</div>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:11px">
+      <div style="display:flex;align-items:center;gap:12px"><span style="width:26px;height:2px;background:#45d6c8;border-radius:2px"></span><span style="color:#d6dfec;font-size:13.5px">Serving path</span></div>
+      <div style="display:flex;align-items:center;gap:12px"><span style="width:26px;height:2px;background:#edb254;border-radius:2px"></span><span style="color:#d6dfec;font-size:13.5px">Observability</span></div>
+      <div style="display:flex;align-items:center;gap:12px"><span style="width:26px;height:2px;background:#b98cf2;border-radius:2px"></span><span style="color:#d6dfec;font-size:13.5px">Remediation</span></div>
+      <div style="display:flex;align-items:center;gap:12px"><span style="width:26px;height:2px;background:#6ea8ff;border-radius:2px"></span><span style="color:#d6dfec;font-size:13.5px">GitOps reconcile</span></div>
+      <div style="display:flex;align-items:center;gap:12px"><span style="width:26px;height:0;border-top:2px dashed #7d8da6"></span><span style="color:#d6dfec;font-size:13.5px">Human review gate</span></div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:380px;top:250px;width:880px;height:750px;box-sizing:border-box;border:1px dashed #2c3d5c;border-radius:22px;background:rgba(19,28,45,.35)"></div>
+  <div style="position:absolute;left:404px;top:236px;padding:6px 12px;background:#0c1424;border:1px solid #2c3d5c;border-radius:8px;color:#9fb0c8;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;letter-spacing:0.05em">Amazon EKS · llm-platform · us-east-1</div>
+
+  <div style="position:absolute;left:420px;top:310px;width:800px;height:190px;box-sizing:border-box;border:1px solid #263752;border-radius:18px;background:rgba(22,32,50,.5)"></div>
+  <div style="position:absolute;left:444px;top:298px;padding:5px 11px;background:#0e1728;border:1px solid #2b3d59;border-radius:7px;color:#8fa2bd;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.05em">GPU node group · g4dn.xlarge · NVIDIA T4 · taint nvidia.com/gpu=true:NoSchedule</div>
+
+  <div style="position:absolute;left:420px;top:540px;width:800px;height:330px;box-sizing:border-box;border:1px solid #263752;border-radius:18px;background:rgba(22,32,50,.5)"></div>
+  <div style="position:absolute;left:444px;top:528px;padding:5px 11px;background:#0e1728;border:1px solid #2b3d59;border-radius:7px;color:#8fa2bd;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.05em">CPU node group · 2 × t3.medium</div>
+
+  <div style="position:absolute;left:452px;top:352px;width:420px;height:124px;box-sizing:border-box;padding:16px 18px;background:linear-gradient(180deg,#16233a,#111a2b);border:1px solid #2b4a5c;border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:9px"><span style="width:7px;height:7px;border-radius:50%;background:#45d6c8"></span><span style="color:#f2f6fb;font-size:21px;font-weight:600;letter-spacing:-0.01em">vLLM</span><span style="color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px">OpenAI-compatible server</span></div>
+    <div style="margin-top:11px;color:#b7c5d8;font-size:13.5px;line-height:1.5">Serves <span style="color:#e6edf6;font-weight:500">Qwen2.5-0.5B-Instruct</span> on one T4</div>
+    <div style="margin-top:6px;color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px">--dtype half · --max-model-len 8192 · gpu-util 0.85</div>
+  </div>
+
+  <div style="position:absolute;left:900px;top:352px;width:290px;height:124px;box-sizing:border-box;padding:16px 18px;background:linear-gradient(180deg,#131d2f,#101827);border:1px solid #24334d;border-radius:14px">
+    <div style="color:#6d7d96;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase">Exposes</div>
+    <div style="margin-top:11px;display:flex;flex-wrap:wrap;gap:8px">
+      <span style="padding:5px 9px;background:#0d1524;border:1px solid #2b4a5c;border-radius:6px;color:#8fe4da;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px">/v1/completions</span>
+      <span style="padding:5px 9px;background:#0d1524;border:1px solid #4a4029;border-radius:6px;color:#f2cf8e;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px">/metrics</span>
+    </div>
+    <div style="margin-top:11px;color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px">resources.limits: nvidia.com/gpu: 1</div>
+  </div>
+
+  <div style="position:absolute;left:452px;top:580px;width:180px;height:104px;box-sizing:border-box;padding:14px 15px;background:linear-gradient(180deg,#131d2f,#101827);border:1px solid #24334d;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#45d6c8"></span><span style="color:#f2f6fb;font-size:17px;font-weight:600">Chat UI</span></div>
+    <div style="margin-top:8px;color:#b7c5d8;font-size:12.5px">Open WebUI</div>
+    <div style="margin-top:5px;color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;line-height:1.35">→ vllm-svc/v1</div>
+  </div>
+
+  <div style="position:absolute;left:680px;top:580px;width:170px;height:104px;box-sizing:border-box;padding:14px 15px;background:linear-gradient(180deg,#131d2f,#101827);border:1px solid #24334d;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#edb254"></span><span style="color:#f2f6fb;font-size:17px;font-weight:600">Prometheus</span></div>
+    <div style="margin-top:8px;color:#b7c5d8;font-size:12.5px;line-height:1.4">ServiceMonitor on vLLM</div>
+    <div style="margin-top:5px;color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px">+ alert rules</div>
+  </div>
+
+  <div style="position:absolute;left:950px;top:580px;width:170px;height:104px;box-sizing:border-box;padding:14px 15px;background:linear-gradient(180deg,#131d2f,#101827);border:1px solid #24334d;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#edb254"></span><span style="color:#f2f6fb;font-size:17px;font-weight:600">Alertmanager</span></div>
+    <div style="margin-top:8px;color:#b7c5d8;font-size:12.5px;line-height:1.4">Routes firing alerts</div>
+    <div style="margin-top:5px;color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px">VLLMDown · 30s</div>
+  </div>
+
+  <div style="position:absolute;left:680px;top:740px;width:170px;height:104px;box-sizing:border-box;padding:14px 15px;background:linear-gradient(180deg,#131d2f,#101827);border:1px solid #24334d;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#edb254"></span><span style="color:#f2f6fb;font-size:17px;font-weight:600">Grafana</span></div>
+    <div style="margin-top:8px;color:#b7c5d8;font-size:12.5px;line-height:1.4">TTFT · tokens/sec<br>GPU cache usage</div>
+  </div>
+
+  <div style="position:absolute;left:940px;top:740px;width:248px;height:104px;box-sizing:border-box;padding:14px 16px;background:linear-gradient(180deg,#1a1930,#131a2b);border:1px solid #46356b;border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#b98cf2"></span><span style="color:#f2f6fb;font-size:18px;font-weight:600">Remediation Agent</span></div>
+    <div style="margin-top:8px;color:#b7c5d8;font-size:12.5px;line-height:1.4">Python · webhook <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px">/alert</span></div>
+    <div style="margin-top:5px;color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px">read-only RBAC: pods, pods/log</div>
+  </div>
+
+  <div style="position:absolute;left:452px;top:900px;width:300px;height:80px;box-sizing:border-box;padding:14px 16px;background:linear-gradient(180deg,#131d33,#101827);border:1px solid #2c3f66;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#6ea8ff"></span><span style="color:#f2f6fb;font-size:17px;font-weight:600">ArgoCD</span><span style="color:#7d8da6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px">path: manifests/</span></div>
+    <div style="margin-top:8px;color:#b7c5d8;font-size:12.5px">Auto-sync · prune · selfHeal</div>
+  </div>
+
+  <div style="position:absolute;left:90px;top:580px;width:250px;height:104px;box-sizing:border-box;padding:14px 16px;background:linear-gradient(180deg,#141b26,#0f151f);border:1px solid #2b3646;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#7d8da6"></span><span style="color:#f2f6fb;font-size:18px;font-weight:600">Engineer</span></div>
+    <div style="margin-top:9px;color:#b7c5d8;font-size:12.5px;line-height:1.45">Chats through the UI ·<br>reviews and merges agent PRs</div>
+  </div>
+
+  <div style="position:absolute;left:1330px;top:740px;width:294px;height:104px;box-sizing:border-box;padding:14px 16px;background:linear-gradient(180deg,#1a1930,#131a2b);border:1px solid #46356b;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#b98cf2"></span><span style="color:#f2f6fb;font-size:18px;font-weight:600">AWS Bedrock</span><span style="color:#c5a9ea;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px">Claude 3 Haiku</span></div>
+    <div style="margin-top:9px;color:#b7c5d8;font-size:12.5px;line-height:1.45">Independent diagnostic LLM — returns <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;color:#d6dfec">{root_cause, action, reason}</span></div>
+  </div>
+
+  <div style="position:absolute;left:1330px;top:900px;width:294px;height:100px;box-sizing:border-box;padding:14px 16px;background:linear-gradient(180deg,#131d33,#101827);border:1px solid #2c3f66;border-radius:14px">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#6ea8ff"></span><span style="color:#f2f6fb;font-size:18px;font-weight:600">GitHub repo</span></div>
+    <div style="margin-top:9px;color:#b7c5d8;font-size:12.5px;line-height:1.45">Source of truth for manifests ·<br>receives the agent's fix PRs</div>
+  </div>
+
+  <div style="position:absolute;left:1284px;top:706px;padding:4px 9px;background:#0c1424;border:1px solid #46356b;border-radius:6px;color:#8f9db4;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase">Outside the cluster</div>
+
+  <sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;left:90px;top:740px;width:250px;height:240px;box-sizing:border-box;padding:18px 18px;background:rgba(16,24,39,.72);border:1px solid #212f47;border-radius:14px">
+      <div style="color:#b98cf2;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase">Safety boundary</div>
+      <div style="margin-top:13px;display:flex;flex-direction:column;gap:10px;color:#aebbcd;font-size:12.5px;line-height:1.45">
+        <div>The LLM only <span style="color:#e6edf6">picks one action</span> from a vetted list — it never writes raw YAML.</div>
+        <div>Deterministic code makes the manifest edit, so every change is auditable.</div>
+        <div>A pull request is the <span style="color:#e6edf6">human gate</span>; nothing reaches the cluster unmerged.</div>
+        <div>The healer and the patient don't share a failure domain — Bedrock stays up when the served model doesn't.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:absolute;left:395px;top:612px;transform:translate(-50%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #2b4a5c;border-radius:6px;color:#8fe4da;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">chat</div>
+  <div style="position:absolute;left:542px;top:506px;transform:translate(-50%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #2b4a5c;border-radius:6px;color:#8fe4da;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">/v1/completions</div>
+  <div style="position:absolute;left:765px;top:526px;transform:translate(-50%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #4a4029;border-radius:6px;color:#f2cf8e;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">scrapes /metrics</div>
+  <div style="position:absolute;left:900px;top:632px;transform:translate(-50%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #4a4029;border-radius:6px;color:#f2cf8e;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">alert fires</div>
+  <div style="position:absolute;left:790px;top:712px;transform:translateY(-50%);padding:5px 9px;background:#0b1220;border:1px solid #4a4029;border-radius:6px;color:#f2cf8e;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">dashboards</div>
+  <div style="position:absolute;left:1025px;top:712px;transform:translate(-100%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #46356b;border-radius:6px;color:#d3bcf5;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">webhook</div>
+  <div style="position:absolute;left:1256px;top:766px;transform:translate(-50%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #46356b;border-radius:6px;color:#d3bcf5;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">diagnose</div>
+  <div style="position:absolute;left:1250px;top:858px;transform:translate(-50%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #46356b;border-radius:6px;color:#d3bcf5;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">opens fix PR</div>
+  <div style="position:absolute;left:1046px;top:918px;transform:translate(-50%,-50%);padding:5px 9px;background:#0b1220;border:1px solid #2c3f66;border-radius:6px;color:#b0cbf6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">merged manifests</div>
+  <div style="position:absolute;left:622px;top:886px;padding:5px 9px;background:#0b1220;border:1px solid #2c3f66;border-radius:6px;color:#b0cbf6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">reconciles cluster state</div>
+
+  <div style="position:absolute;left:900px;top:1046px;transform:translate(-50%,-50%);padding:5px 10px;background:#0b1220;border:1px solid #2b3646;border-radius:6px;color:#a3b1c6;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;letter-spacing:0.03em;white-space:nowrap">reviews &amp; merges the PR</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1680,&quot;height&quot;:1100},&quot;showNotes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showNotes: this.props.showNotes ?? true,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
