@@ -1,29 +1,27 @@
 from flask import Flask, request
 from kubernetes import client, config as k8s_config
-from github import Github
-import requests
+from github import Github, Auth
+import boto3
 import json as _json
 import os
 import time
 import re
-import boto3
-
-BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 app = Flask(__name__)
 
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:1b")
-GITHUB_REPO = os.environ.get("GITHUB_REPO", "hritikmunde/llm-platform")
-MANIFEST_PATH = "manifests/stub-model.yaml"
+# ---- config (env-overridable) ----
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
+AWS_REGION       = os.environ.get("AWS_REGION", "us-east-1")
+GITHUB_REPO      = os.environ.get("GITHUB_REPO", "hritikmunde/llm-platform")
+VLLM_MANIFEST    = os.environ.get("VLLM_MANIFEST", "manifests/vllm.yaml")
 
+# The bounded set of fixes the agent may propose.
+# The LLM only CHOOSES one of these; deterministic code makes the actual edit.
 ALLOWED_ACTIONS = [
-    "scale_up_replicas",
-    "increase_memory_limit",
-    "rollback_deployment",
-    "adjust_vllm_config",
-    "no_action_needed",
+    "lower_gpu_memory_utilization",  # gpu-memory-utilization too high → OOM/crash
+    "lower_max_model_len",           # max-model-len too big for the GPU → crash
+    "rollback_deployment",           # a bad recent change
+    "no_action_needed",              # healthy / transient
 ]
 
 
@@ -34,31 +32,54 @@ def load_kube():
         k8s_config.load_kube_config()
 
 
-def get_pod_logs(deployment, namespace, tail=50):
+def get_pod_logs(deployment, namespace, tail=60):
+    """Fetch status + recent logs for the pods of a deployment, selected by label
+    (app=<deployment>) so 'vllm' does not accidentally match 'vllm-ui'."""
     load_kube()
     v1 = client.CoreV1Api()
-    #pods = v1.list_namespaced_pod(namespace=namespace).items
-    #matching = [p for p in pods if p.metadata.name.startswith(deployment + "-")]
-    pods = v1.list_namespaced_pod(namespace=namespace, label_selector=f"app={deployment}").items
-    matching = pods
-    if not matching:
-        return f"No pods found for deployment '{deployment}' in namespace '{namespace}'."
+    pods = v1.list_namespaced_pod(
+        namespace=namespace, label_selector=f"app={deployment}"
+    ).items
+    if not pods:
+        return f"No pods found for app={deployment} in namespace '{namespace}'."
     out = []
-    for p in matching:
+    for p in pods:
         name = p.metadata.name
         phase = p.status.phase
-        out.append(f"--- pod {name} (phase={phase}) ---")
+        # surface waiting/termination reasons (CrashLoopBackOff, OOMKilled, etc.)
+        reasons = []
+        for cs in (p.status.container_statuses or []):
+            if cs.state and cs.state.waiting and cs.state.waiting.reason:
+                reasons.append(f"waiting={cs.state.waiting.reason}")
+            if cs.state and cs.state.terminated and cs.state.terminated.reason:
+                reasons.append(f"terminated={cs.state.terminated.reason}")
+            if cs.last_state and cs.last_state.terminated and cs.last_state.terminated.reason:
+                reasons.append(f"lastTerminated={cs.last_state.terminated.reason}")
+        rtxt = (" [" + ", ".join(reasons) + "]") if reasons else ""
+        out.append(f"--- pod {name} (phase={phase}){rtxt} ---")
+        # try current logs, fall back to previous (crash-looped) logs
         try:
             logs = v1.read_namespaced_pod_log(name=name, namespace=namespace, tail_lines=tail)
+            if not logs:
+                logs = v1.read_namespaced_pod_log(
+                    name=name, namespace=namespace, tail_lines=tail, previous=True
+                )
             out.append(logs or "(no logs)")
-        except Exception as e:
-            out.append(f"(could not read logs: {e})")
+        except Exception:
+            try:
+                logs = v1.read_namespaced_pod_log(
+                    name=name, namespace=namespace, tail_lines=tail, previous=True
+                )
+                out.append(logs or "(no logs)")
+            except Exception as e:
+                out.append(f"(could not read logs: {e})")
     return "\n".join(out)
 
 
 def diagnose(alertname, deployment, namespace, summary, context):
-    prompt = f"""You are an SRE remediation agent for a Kubernetes platform.
-An alert has fired. Diagnose the root cause and choose ONE fix from the allowed list.
+    """Send the alert + gathered context to Bedrock and get a structured fix."""
+    prompt = f"""You are an SRE remediation agent for a Kubernetes platform serving an LLM with vLLM.
+An alert has fired. Diagnose the root cause from the logs and choose ONE fix from the allowed list.
 
 ALERT: {alertname}
 DEPLOYMENT: {deployment}
@@ -71,11 +92,16 @@ GATHERED CONTEXT (pod status and logs):
 ALLOWED ACTIONS (choose exactly one):
 {", ".join(ALLOWED_ACTIONS)}
 
-Respond ONLY with a JSON object, no other text, in this exact shape:
+Guidance:
+- If the logs show CUDA out of memory / KV cache / GPU memory errors, prefer lower_gpu_memory_utilization.
+- If the logs show the model/context length cannot be allocated, prefer lower_max_model_len.
+- If the pod is healthy and running normally, choose no_action_needed.
+
+Respond ONLY with a JSON object, no markdown, no code fences, in exactly this shape:
 {{"root_cause": "<one sentence>", "action": "<one of the allowed actions>", "reason": "<one sentence why this fix>"}}"""
 
-    client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
-    resp = client.invoke_model(
+    client_br = boto3.client("bedrock-runtime", region_name=AWS_REGION)
+    resp = client_br.invoke_model(
         modelId=BEDROCK_MODEL_ID,
         body=_json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
@@ -84,12 +110,21 @@ Respond ONLY with a JSON object, no other text, in this exact shape:
         }),
     )
     payload = _json.loads(resp["body"].read())
-    raw = payload["content"][0]["text"]
+    raw = payload["content"][0]["text"].strip()
+
+    # strip markdown code fences if Claude wrapped the JSON
+    if raw.startswith("```"):
+        raw = raw.split("```")[1] if "```" in raw[3:] else raw[3:]
+        if raw.lstrip().startswith("json"):
+            raw = raw.lstrip()[4:]
+        raw = raw.strip()
+
     try:
         return _json.loads(raw)
     except Exception:
         return {"root_cause": "unparseable", "action": "no_action_needed",
                 "reason": f"LLM returned non-JSON: {raw[:200]}"}
+
 
 def read_token():
     env = os.environ.get("GITHUB_TOKEN")
@@ -100,58 +135,58 @@ def read_token():
 
 
 def apply_fix_to_manifest(text, action):
-    """Given the manifest text and an action, return (new_text, change_description).
-    Only a bounded set of edits is allowed — the LLM cannot write arbitrary YAML."""
-    if action == "scale_up_replicas":
-        m = re.search(r"(replicas:\s*)(\d+)", text)
+    """Deterministically edit vllm.yaml for the chosen action.
+    The LLM chose the action; this code makes the exact, bounded change."""
+    if action == "lower_gpu_memory_utilization":
+        # matches an arg pair:  - "--gpu-memory-utilization"\n  - "0.99"
+        m = re.search(r'("--gpu-memory-utilization"\s*\n\s*-\s*")([0-9.]+)(")', text)
         if m:
-            current = int(m.group(2))
-            new = max(current + 1, 1)
-            new_text = text[:m.start()] + f"{m.group(1)}{new}" + text[m.end():]
-            return new_text, f"scale replicas {current} -> {new}"
-    if action == "increase_memory_limit":
-        m = re.search(r"(memory:\s*\")(\d+)(Mi\")", text)
+            new_val = "0.85"
+            if m.group(2) == new_val:
+                return None, "gpu-memory-utilization already at safe value"
+            return (text[:m.start()] + f"{m.group(1)}{new_val}{m.group(3)}" + text[m.end():],
+                    f"lower gpu-memory-utilization {m.group(2)} -> {new_val}")
+        return None, "could not locate gpu-memory-utilization arg"
+
+    if action == "lower_max_model_len":
+        m = re.search(r'("--max-model-len"\s*\n\s*-\s*")([0-9]+)(")', text)
         if m:
-            current = int(m.group(2))
-            new = current * 2
-            new_text = text[:m.start()] + f'{m.group(1)}{new}{m.group(3)}' + text[m.end():]
-            return new_text, f"increase memory limit {current}Mi -> {new}Mi"
-    # actions with no safe automatic edit yet
+            new_val = "4096"
+            return (text[:m.start()] + f"{m.group(1)}{new_val}{m.group(3)}" + text[m.end():],
+                    f"lower max-model-len {m.group(2)} -> {new_val}")
+        return None, "could not locate max-model-len arg"
+
     return None, f"no automatic edit implemented for action '{action}'"
 
 
 def open_pr(diagnosis, alertname, deployment):
     action = diagnosis.get("action")
-    if action in ("no_action_needed",):
-        return "no PR opened (action = no_action_needed)"
+    if action in ("no_action_needed", "rollback_deployment"):
+        return f"no PR opened (action = {action})"
 
-    gh = Github(read_token())
+    gh = Github(auth=Auth.Token(read_token()))
     repo = gh.get_repo(GITHUB_REPO)
     default_branch = repo.default_branch
 
-    # read current manifest from the default branch
-    file = repo.get_contents(MANIFEST_PATH, ref=default_branch)
+    file = repo.get_contents(VLLM_MANIFEST, ref=default_branch)
     current_text = file.decoded_content.decode()
 
     new_text, change_desc = apply_fix_to_manifest(current_text, action)
     if new_text is None:
         return f"no PR opened ({change_desc})"
 
-    # create a new branch
     branch = f"agent-fix-{action}-{int(time.time())}"
     base_sha = repo.get_branch(default_branch).commit.sha
     repo.create_git_ref(ref=f"refs/heads/{branch}", sha=base_sha)
 
-    # commit the change to the new branch
     repo.update_file(
-        path=MANIFEST_PATH,
+        path=VLLM_MANIFEST,
         message=f"agent: {change_desc} for {alertname}",
         content=new_text,
         sha=file.sha,
         branch=branch,
     )
 
-    # open the PR with the diagnosis as the description
     body = f"""### Automated remediation by the SRE agent
 
 **Alert:** {alertname}
@@ -164,10 +199,12 @@ def open_pr(diagnosis, alertname, deployment):
 **Change applied:** {change_desc}
 
 ---
-This PR was opened automatically. Review before merging."""
+Diagnosed via AWS Bedrock (Claude Haiku). This PR was opened automatically — review before merging."""
 
-    pr = repo.create_pull(title=f"agent: fix {alertname} ({change_desc})",
-                          body=body, head=branch, base=default_branch)
+    pr = repo.create_pull(
+        title=f"agent: fix {alertname} ({change_desc})",
+        body=body, head=branch, base=default_branch,
+    )
     return f"PR opened: {pr.html_url}"
 
 
@@ -192,7 +229,7 @@ def alert():
         annotations = a.get("annotations", {})
         alertname = labels.get("alertname")
         deployment = labels.get("deployment")
-        namespace = labels.get("namespace")
+        namespace = labels.get("namespace") or "default"
         severity = labels.get("severity")
         summary = annotations.get("summary")
 
@@ -204,12 +241,17 @@ def alert():
             print("Alert resolved — no diagnosis needed.")
             continue
 
+        # ignore cluster-control-plane / non-workload alerts with no deployment target
+        if not deployment or deployment == "None":
+            print("No deployment target in alert — skipping.")
+            continue
+
         try:
             context = get_pod_logs(deployment, namespace)
         except Exception as e:
             context = f"ERROR gathering context: {e}"
         print("---- GATHERED CONTEXT ----")
-        print(context)
+        print(context[:2000])
 
         try:
             diagnosis = diagnose(alertname, deployment, namespace, summary, context)
@@ -232,4 +274,4 @@ def alert():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
