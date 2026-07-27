@@ -6,6 +6,10 @@ import json as _json
 import os
 import time
 import re
+import boto3
+
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 app = Flask(__name__)
 
@@ -68,17 +72,22 @@ ALLOWED ACTIONS (choose exactly one):
 Respond ONLY with a JSON object, no other text, in this exact shape:
 {{"root_cause": "<one sentence>", "action": "<one of the allowed actions>", "reason": "<one sentence why this fix>"}}"""
 
-    resp = requests.post(OLLAMA_URL, json={
-        "model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "format": "json"
-    }, timeout=120)
-    resp.raise_for_status()
-    raw = resp.json().get("response", "")
+    client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
+    resp = client.invoke_model(
+        modelId=BEDROCK_MODEL_ID,
+        body=_json.dumps({
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 300,
+            "messages": [{"role": "user", "content": prompt}],
+        }),
+    )
+    payload = _json.loads(resp["body"].read())
+    raw = payload["content"][0]["text"]
     try:
         return _json.loads(raw)
     except Exception:
         return {"root_cause": "unparseable", "action": "no_action_needed",
                 "reason": f"LLM returned non-JSON: {raw[:200]}"}
-
 
 def read_token():
     env = os.environ.get("GITHUB_TOKEN")

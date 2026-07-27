@@ -2,3 +2,4 @@ flask
 kubernetes
 requests
 PyGithub
+boto3

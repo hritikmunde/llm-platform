@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: remediation-agent
   namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::442042529210:role/remediation-agent-bedrock
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -46,13 +48,15 @@ spec:
       serviceAccountName: remediation-agent
       containers:
         - name: agent
-          image: remediation-agent:v1
+          image: 442042529210.dkr.ecr.us-east-1.amazonaws.com/remediation-agent:v1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
-            - name: OLLAMA_URL
-              value: "http://host.docker.internal:11434/api/generate"
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: BEDROCK_MODEL_ID
+              value: "us.anthropic.claude-haiku-4-5-20251001-v1:0"
             - name: GITHUB_REPO
               value: "hritikmunde/llm-platform"
             - name: GITHUB_TOKEN
