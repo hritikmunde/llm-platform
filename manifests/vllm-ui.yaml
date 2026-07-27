@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-ui
+  namespace: default
+  labels:
+    app: vllm-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-ui
+  template:
+    metadata:
+      labels:
+        app: vllm-ui
+    spec:
+      containers:
+        - name: openwebui
+          image: ghcr.io/open-webui/open-webui:main
+          ports:
+            - containerPort: 8080
+          env:
+            # point Open WebUI at your vLLM's OpenAI-compatible API
+            - name: OPENAI_API_BASE_URL
+              value: "http://vllm-svc.default.svc.cluster.local/v1"
+            - name: OPENAI_API_KEY
+              value: "dummy-key"          # vLLM doesn't check it, but the UI requires one
+            - name: WEBUI_AUTH
+              value: "False"              # skip login for a local demo
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-ui
+  namespace: default
+spec:
+  selector:
+    app: vllm-ui
+  ports:
+    - port: 80
+      targetPort: 8080
