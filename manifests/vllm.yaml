@@ -29,7 +29,7 @@ spec:
             - "--model"
             - "Qwen/Qwen2.5-0.5B-Instruct"
             - "--max-model-len"
-            - "8192"
+            - "999999"
             - "--gpu-memory-utilization"
             - "0.99"
             - "--dtype"
