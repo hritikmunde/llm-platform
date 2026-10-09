@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>llm-platform · open-source self-healing LLM inference</title>
+<meta name="description" content="Open-source, MIT-licensed platform that serves LLMs with vLLM on Kubernetes and repairs itself. An AIOps agent diagnoses incidents and opens the fix as a reviewable pull request.">
+<link rel="canonical" href="https://llm-platform.tech/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://llm-platform.tech/">
+<meta property="og:title" content="llm-platform: self-healing LLM inference">
+<meta property="og:description" content="vLLM on Kubernetes plus an AI agent that turns alerts into reviewable fix PRs. Open source, MIT, early stage.">
+<meta property="og:image" content="https://llm-platform.tech/assets/architecture.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070b14">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b1220'/><path d='M7 17h5l2-6 4 12 2-6h5' fill='none' stroke='%2337d6b4' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070b14;
+    --bg-2: #0b1220;
+    --panel: #0f1828;
+    --panel-2: #131f33;
+    --line: #1f2c44;
+    --line-2: #2a3a57;
+    --text: #e6ecf5;
+    --muted: #93a0b8;
+    --dim: #66738c;
+    --teal: #37d6b4;
+    --amber: #f4b53f;
+    --violet: #b48cff;
+    --blue: #6fa3ff;
+    --green: #3fd07a;
+    --red: #ff6b7a;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --max: 1160px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(900px 500px at 10% -10%, rgba(55,214,180,.09), transparent 60%),
+      radial-gradient(800px 500px at 100% 0%, rgba(180,140,255,.07), transparent 60%);
+    background-repeat: no-repeat;
+    color: var(--text);
+    font: 16px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--teal); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre, .mono { font-family: var(--mono); }
+  :not(pre) > code { font-size: .88em; background: var(--panel-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 600px) { .wrap { padding: 0 16px; } }
+
+  /* alpha banner */
+  .banner { background: rgba(244,181,63,.08); border-bottom: 1px solid rgba(244,181,63,.22); font-size: 13.5px; color: #f6d38c; text-align: center; padding: 8px 16px; }
+  .banner a { color: var(--amber); font-weight: 600; }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: rgba(7,11,20,.8); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; font-family: var(--mono); font-size: 15px; }
+  .brand:hover { text-decoration: none; }
+  .brand .ver { font-weight: 500; font-size: 11.5px; color: var(--amber); border: 1px solid rgba(244,181,63,.35); border-radius: 5px; padding: 1px 6px; }
+  .nav-links { display: flex; align-items: center; gap: 22px; font-size: 14px; }
+  .nav-links a { color: var(--muted); }
+  .nav-links a:hover { color: var(--text); text-decoration: none; }
+  @media (max-width: 820px) { .nav-links a.hide-sm { display: none; } }
+
+  /* buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 10px; font-weight: 600; font-size: 15px; border: 1px solid var(--line-2); color: var(--text); background: var(--panel); transition: border-color .15s, background .15s; white-space: nowrap; }
+  .btn:hover { text-decoration: none; border-color: var(--muted); }
+  .btn.primary { background: var(--teal); color: #04221b; border-color: var(--teal); }
+  .btn.primary:hover { background: #5ae3c6; }
+  .btn.sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+  .btn .count { font-family: var(--mono); font-size: 12px; color: var(--muted); border-left: 1px solid var(--line-2); padding-left: 8px; margin-left: 2px; }
+
+  /* hero */
+  .hero { padding: 72px 0 64px; }
+  .hero .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  @media (max-width: 980px) { .hero .wrap { grid-template-columns: 1fr; gap: 36px; } }
+  .hero .wrap > *, .gs > *, .ext > * { min-width: 0; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .b { display: inline-flex; font-family: var(--mono); font-size: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line-2); }
+  .b span { padding: 3px 8px; }
+  .b span:first-child { background: var(--panel-2); color: var(--muted); }
+  .b span:last-child { background: var(--panel); color: var(--text); }
+  .b.lic span:last-child { color: var(--blue); }
+  .b.alpha span:last-child { color: var(--amber); }
+  .b.prs span:last-child { color: var(--green); }
+  a.b:hover { text-decoration: none; border-color: var(--muted); }
+  h1 { font-size: clamp(36px, 5.2vw, 58px); line-height: 1.06; letter-spacing: -0.03em; margin: 0 0 18px; font-weight: 800; }
+  h1 .accent { background: linear-gradient(90deg, var(--teal), var(--blue) 55%, var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: clamp(17px, 1.8vw, 19px); color: var(--muted); margin: 0 0 28px; }
+  .lede strong { color: var(--text); font-weight: 600; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .clone { margin-top: 22px; display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 13.5px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 10px 10px 14px; max-width: 520px; }
+  .clone code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; color: var(--text); background: none; border: 0; padding: 0; font-size: 13px; }
+  .clone .p { color: var(--teal); }
+
+  /* terminal */
+  .term { background: #050810; border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; box-shadow: 0 30px 80px -30px rgba(0,0,0,.7); min-width: 0; }
+  .term-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .term-bar .dots { display: flex; gap: 6px; flex: none; }
+  .term-bar .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-2); }
+  .term-bar .t { flex: 1; min-width: 0; font-family: var(--mono); font-size: 12px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .copy { flex: none; font: 500 12px var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+  .copy:hover { color: var(--text); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-size: 12.8px; line-height: 1.7; color: #cdd6e4; }
+  pre .c { color: var(--dim); }
+  pre .p { color: var(--teal); user-select: none; }
+  pre .y { color: var(--amber); }
+  pre .v { color: var(--violet); }
+  pre .g { color: var(--green); }
+  pre .r { color: var(--red); }
+  pre .w { color: var(--text); font-weight: 700; }
+  .term-cap { font-size: 12.5px; color: var(--dim); margin-top: 10px; text-align: right; }
+
+  /* sections */
+  section { padding: 76px 0; border-top: 1px solid var(--line); }
+  .eyebrow { font-family: var(--mono); font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); margin: 0 0 12px; }
+  h2 { font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 14px; font-weight: 700; }
+  .sub { color: var(--muted); max-width: 700px; margin: 0 0 40px; font-size: 17px; }
+
+  /* get started */
+  .gs { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
+  @media (max-width: 900px) { .gs { grid-template-columns: 1fr; } }
+  .prereq { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+  .prereq h3 { margin: 0 0 12px; font-size: 14px; font-family: var(--mono); color: var(--muted); font-weight: 500; }
+  .prereq ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14.5px; }
+  .prereq li { display: flex; gap: 10px; }
+  .prereq li::before { content: "✓"; color: var(--teal); font-weight: 700; flex: none; }
+  .note { margin-top: 16px; font-size: 14px; color: var(--muted); border-left: 2px solid var(--amber); padding: 4px 0 4px 14px; }
+
+  /* PR showcase */
+  .pr { border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); overflow: hidden; }
+  .pr-head { display: flex; align-items: flex-start; gap: 14px; padding: 20px 22px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .merged { flex: none; display: inline-flex; align-items: center; gap: 6px; background: #8957e5; color: #fff; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 999px; }
+  .pr-title { flex: 1 1 300px; min-width: 0; }
+  .pr-title h3 { margin: 0 0 4px; font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+  .pr-title h3 span { color: var(--dim); font-weight: 400; }
+  .pr-title p { margin: 0; color: var(--dim); font-size: 13px; font-family: var(--mono); overflow-wrap: anywhere; }
+  .pr-body { display: grid; grid-template-columns: 1.15fr 1fr; }
+  @media (max-width: 860px) { .pr-body { grid-template-columns: 1fr; } }
+  .diag { padding: 22px; border-right: 1px solid var(--line); }
+  @media (max-width: 860px) { .diag { border-right: 0; border-bottom: 1px solid var(--line); } }
+  .diag h4 { margin: 0 0 14px; font-size: 13px; font-family: var(--mono); color: var(--violet); font-weight: 500; }
+  .kv { display: grid; grid-template-columns: 100px 1fr; gap: 10px 14px; font-size: 14.5px; margin: 0; }
+  @media (max-width: 480px) { .kv { grid-template-columns: 1fr; gap: 2px 0; } .kv dd { margin-bottom: 10px !important; } }
+  .kv dt { color: var(--dim); font-family: var(--mono); font-size: 13px; padding-top: 2px; }
+  .kv dd { margin: 0; }
+  .diff { font-family: var(--mono); font-size: 13px; background: var(--bg-2); padding: 18px 0; overflow-x: auto; }
+  .diff .file { padding: 0 18px 12px; color: var(--muted); }
+  .diff div.l { padding: 1px 18px; white-space: pre; }
+  .diff .rm { background: rgba(255,107,122,.10); color: #ffb3bb; }
+  .diff .add { background: rgba(63,208,122,.10); color: #9ff0bf; }
+  .diff .ctx { color: var(--dim); }
+  .pr-foot { padding: 14px 22px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  @media (max-width: 980px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .step .n { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  .step h3 { margin: 8px 0; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  .step h3 i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .step p { margin: 0; font-size: 14px; color: var(--muted); }
+
+  /* cards */
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 980px) { .grid4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .grid4 { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px 24px; }
+  .card h3 { margin: 0 0 8px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .card .ic { font-family: var(--mono); font-size: 12px; color: var(--violet); margin-bottom: 10px; display: block; }
+  a.card { color: inherit; display: block; transition: border-color .15s, transform .15s; }
+  a.card:hover { text-decoration: none; border-color: var(--line-2); transform: translateY(-2px); }
+  a.card .go { display: block; margin-top: 14px; font-size: 13.5px; color: var(--teal); font-weight: 500; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+  /* extend */
+  .ext { display: grid; grid-template-columns: 1fr 1.25fr; gap: 36px; align-items: center; }
+  @media (max-width: 900px) { .ext { grid-template-columns: 1fr; } }
+  .ext ol { margin: 0 0 24px; padding: 0; list-style: none; counter-reset: e; display: grid; gap: 16px; }
+  .ext li { counter-increment: e; display: grid; grid-template-columns: 30px 1fr; gap: 12px; color: var(--muted); font-size: 15px; }
+  .ext li::before { content: counter(e); font-family: var(--mono); font-size: 13px; color: var(--teal); border: 1px solid var(--line-2); border-radius: 7px; width: 28px; height: 28px; display: grid; place-items: center; }
+  .ext li b { color: var(--text); font-weight: 600; }
+
+  /* figure */
+  figure { margin: 0; border: 1px solid var(--line-2); border-radius: 14px; overflow: hidden; background: #0b0f1a; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { padding: 12px 18px; font-size: 13.5px; color: var(--dim); border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+  /* stack */
+  .stack { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+  .tech { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .tech b { display: block; font-size: 15px; }
+  .tech span { font-size: 13px; color: var(--dim); }
+
+  /* status */
+  .status h3 { font-size: 15px; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+  .status ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 15px; color: var(--muted); }
+  .status li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; }
+  .status .ok li::before { content: "●"; color: var(--green); font-size: 10px; padding-top: 6px; }
+  .status .lim li::before { content: "●"; color: var(--amber); font-size: 10px; padding-top: 6px; }
+  .road { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 10px; }
+  .road li { display: flex; gap: 14px; align-items: flex-start; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 13px 18px; font-size: 15px; }
+  .road .st { flex: none; font-family: var(--mono); font-size: 11.5px; padding: 2px 8px; border-radius: 5px; margin-top: 2px; min-width: 44px; text-align: center; }
+  .st.next { color: var(--amber); background: rgba(244,181,63,.1); }
+  .st.idea { color: var(--muted); background: var(--panel-2); }
+
+  /* footer */
+  footer { border-top: 1px solid var(--line); padding: 56px 0 32px; color: var(--dim); font-size: 14px; background: var(--bg-2); }
+  .fgrid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; }
+  @media (max-width: 820px) { .fgrid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 460px) { .fgrid { grid-template-columns: 1fr; } }
+  .fgrid h4 { margin: 0 0 12px; font-size: 12.5px; font-family: var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .fgrid ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .fgrid a { color: var(--muted); }
+  .fgrid a:hover { color: var(--text); }
+  .fgrid p { margin: 12px 0 0; max-width: 320px; }
+  .legal { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+  .legal a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  llm-platform is in <b>alpha</b>. It works end to end, but expect rough edges and breaking changes.
+  <a href="https://github.com/hritikmunde/llm-platform/issues/new">Share feedback →</a>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="/">
+      <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0f1828" stroke="#2a3a57"/><path d="M7 17h5l2-6 4 12 2-6h5" fill="none" stroke="#37d6b4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      llm-platform <span class="ver">alpha</span>
+    </a>
+    <div class="nav-links">
+      <a class="hide-sm" href="#get-started">Get started</a>
+      <a class="hide-sm" href="#how">How it works</a>
+      <a class="hide-sm" href="#extend">Extend</a>
+      <a class="hide-sm" href="#roadmap">Roadmap</a>
+      <a class="hide-sm" href="https://github.com/hritikmunde/llm-platform#readme">Docs</a>
+      <a class="btn sm" href="https://github.com/hritikmunde/llm-platform">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub<span class="count" id="stars" hidden></span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="badges">
+        <a class="b lic" href="https://github.com/hritikmunde/llm-platform/blob/master/LICENSE"><span>license</span><span>MIT</span></a>
+        <span class="b alpha"><span>status</span><span>alpha</span></span>
+        <a class="b prs" href="https://github.com/hritikmunde/llm-platform/blob/master/CONTRIBUTING.md"><span>PRs</span><span>welcome</span></a>
+        <span class="b"><span>runs on</span><span>Kubernetes</span></span>
+      </div>
+      <h1>Self-healing LLM inference, <span class="accent">fixed by pull request.</span></h1>
+      <p class="lede">
+        <strong>llm-platform</strong> is an open-source stack that serves open-weight models with <strong>vLLM</strong> on
+        Kubernetes. Its AIOps agent turns a firing alert into a <strong>diagnosed, reviewable fix PR</strong>.
+        The AI gets no cluster write access. Your Git workflow stays the approval step.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="#get-started">Get started</a>
+        <a class="btn" href="https://github.com/hritikmunde/llm-platform">★ Star on GitHub</a>
+      </div>
+      <div class="clone">
+        <code><span class="p">$ </span>git clone https://github.com/hritikmunde/llm-platform</code>
+        <button class="copy" data-copy="git clone https://github.com/hritikmunde/llm-platform">copy</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="term">
+        <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span><span class="t">kubectl logs deploy/agent</span></div>
+<pre><span class="c">==================================================</span>
+<span class="w">ALERT RECEIVED</span>  status=<span class="r">firing</span>  alertname=<span class="y">VLLMDown</span>  deployment=vllm
+<span class="c">==================================================</span>
+<span class="c">---- GATHERED CONTEXT ----</span>
+--- pod vllm-… (phase=Running) [lastTerminated=Error] ---
+<span class="r">ValueError: User-specified max_model_len (999999) is</span>
+<span class="r">greater than the derived max_model_len (32768) …</span>
+<span class="c">---- DIAGNOSIS ----</span>
+  root_cause: <span class="v">max_model_len exceeds the model's</span>
+              <span class="v">max position embeddings (32768)</span>
+  action    : <span class="y">lower_max_model_len</span>
+<span class="c">---- PR ----</span>
+  <span class="g">PR opened: github.com/hritikmunde/llm-platform/pull/8</span>
+<span class="c">==================================================</span></pre>
+      </div>
+      <p class="term-cap">The real incident behind PR #8, abridged</p>
+    </div>
+  </div>
+</header>
+
+<section id="get-started">
+  <div class="wrap">
+    <p class="eyebrow">Get started</p>
+    <h2>From zero to a self-healing cluster</h2>
+    <p class="sub">Terraform defines the whole platform, and ArgoCD deploys it from Git. You run three steps.</p>
+    <div class="gs">
+      <div class="prereq">
+        <h3>// prerequisites</h3>
+        <ul>
+          <li>AWS account with GPU quota (<em>Running On-Demand G and VT instances</em>)</li>
+          <li>Bedrock model access for Claude Haiku</li>
+          <li><code>aws</code>, <code>terraform</code>, <code>kubectl</code>, <code>helm</code></li>
+          <li>A GitHub token the agent can use to open PRs on your fork</li>
+        </ul>
+      </div>
+      <div>
+        <div class="term">
+          <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span><span class="t">bash</span><button class="copy" data-copy-from="qs">copy</button></div>
+<pre id="qs"><span class="c"># 1. provision VPC + EKS + GPU node group</span>
+<span class="p">$ </span>git clone https://github.com/hritikmunde/llm-platform && cd llm-platform/terraform
+<span class="p">$ </span>terraform init && terraform apply
+<span class="p">$ </span>aws eks update-kubeconfig --region us-east-1 --name llm-platform
+
+<span class="c"># 2. install ArgoCD + the monitoring stack</span>
+<span class="p">$ </span>kubectl create namespace argocd
+<span class="p">$ </span>kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+<span class="p">$ </span>helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+<span class="p">$ </span>kubectl create namespace monitoring
+<span class="p">$ </span>helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring
+
+<span class="c"># 3. let ArgoCD deploy the platform from Git</span>
+<span class="p">$ </span>cd .. && kubectl apply -f argocd-app.yaml</pre>
+        </div>
+        <p class="note">The GPU node bills by the hour. <code>terraform destroy</code> tears everything down, and because all state lives in Git, the next <code>apply</code> rebuilds it exactly. Full walkthrough in the <a href="https://github.com/hritikmunde/llm-platform#running-it">README</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="proof">
+  <div class="wrap">
+    <p class="eyebrow">Real output, not a mockup</p>
+    <h2>vLLM crashed. The agent wrote the fix.</h2>
+    <p class="sub">
+      We deliberately pushed an invalid <code>--max-model-len</code>. vLLM refused to start and <code>VLLMDown</code> fired.
+      The agent read the pod logs, asked Bedrock for a diagnosis, and opened this PR. A maintainer merged it and ArgoCD rolled it out.
+    </p>
+    <div class="pr">
+      <div class="pr-head">
+        <span class="merged">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218ZM4.25 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8.5-4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM5 3.25a.75.75 0 1 0 0 .01V3.25Z"/></svg>
+          Merged
+        </span>
+        <div class="pr-title">
+          <h3>agent: fix VLLMDown (lower max-model-len 999999 → 4096) <span>#8</span></h3>
+          <p>agent-fix-lower_max_model_len-1785182951 → master</p>
+        </div>
+        <a class="btn sm" href="https://github.com/hritikmunde/llm-platform/pull/8">View on GitHub ↗</a>
+      </div>
+      <div class="pr-body">
+        <div class="diag">
+          <h4>// Automated remediation by the SRE agent</h4>
+          <dl class="kv">
+            <dt>alert</dt><dd><code>VLLMDown</code></dd>
+            <dt>root cause</dt><dd>User-specified max_model_len (999999) exceeds the model's maximum position embeddings (32768), causing vLLM initialization to fail.</dd>
+            <dt>action</dt><dd><code>lower_max_model_len</code></dd>
+            <dt>reason</dt><dd>Reducing it to fit the model's limits lets the pod start successfully.</dd>
+          </dl>
+        </div>
+        <div class="diff" aria-label="Diff of manifests/vllm.yaml">
+          <div class="file">manifests/vllm.yaml</div>
+          <div class="l ctx">          args:</div>
+          <div class="l ctx">            - "--model"</div>
+          <div class="l ctx">            - "Qwen/Qwen2.5-0.5B-Instruct"</div>
+          <div class="l ctx">            - "--max-model-len"</div>
+          <div class="l rm">-           - "999999"</div>
+          <div class="l add">+           - "4096"</div>
+          <div class="l ctx">            - "--gpu-memory-utilization"</div>
+        </div>
+      </div>
+      <div class="pr-foot">
+        <span>Diagnosed via AWS Bedrock (Claude Haiku) · edit made by deterministic code</span>
+        <span class="mono">+1 −1</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <p class="eyebrow">How it works</p>
+    <h2>The self-healing loop</h2>
+    <p class="sub">The parts are standard cloud-native tools. The agent connects them, and Git sits between the agent and the cluster.</p>
+    <div class="steps">
+      <div class="step"><span class="n">01</span><h3><i style="background:var(--amber)"></i>Detect</h3><p>Prometheus rules catch <code>VLLMDown</code> and <code>CrashLoopBackOff</code>. Alertmanager sends a webhook to the agent.</p></div>
+      <div class="step"><span class="n">02</span><h3><i style="background:var(--violet)"></i>Gather</h3><p>The agent pulls pod state and recent logs with a <b>read-only</b> ServiceAccount.</p></div>
+      <div class="step"><span class="n">03</span><h3><i style="background:var(--violet)"></i>Diagnose</h3><p>Bedrock returns <code>{root_cause, action, reason}</code>, choosing from a fixed list of actions.</p></div>
+      <div class="step"><span class="n">04</span><h3><i style="background:var(--muted)"></i>Propose</h3><p>Deterministic code edits the manifest and opens a PR that includes the diagnosis.</p></div>
+      <div class="step"><span class="n">05</span><h3><i style="background:var(--teal)"></i>Reconcile</h3><p>A human merges. ArgoCD syncs the cluster and the platform recovers.</p></div>
+    </div>
+
+    <div class="grid2" style="margin-top:16px">
+      <div class="card">
+        <span class="ic">safety · bounded autonomy</span>
+        <h3>The LLM chooses. It never writes.</h3>
+        <p>The model returns one action from a vetted list. Plain code makes the edit, so you can predict every possible diff in advance.</p>
+        <div class="actions"><code>lower_gpu_memory_utilization</code><code>lower_max_model_len</code><code>rollback_deployment</code><code>no_action_needed</code></div>
+      </div>
+      <div class="card">
+        <span class="ic">safety · human gate + isolation</span>
+        <h3>Nothing ships without a merge</h3>
+        <p>The PR is the approval step, and its description holds the full reasoning. Diagnosis runs on Bedrock, outside the cluster, so the agent stays up even when the served model goes down.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="extend">
+  <div class="wrap ext">
+    <div>
+      <p class="eyebrow">Extend it</p>
+      <h2>Teach it a new fix in ~10 lines</h2>
+      <p class="sub" style="margin-bottom:28px">Each capability is a small, reviewable addition. Contributing a new failure mode is the easiest way to get involved.</p>
+      <ol>
+        <li><span><b>Name the action</b> in <code>ALLOWED_ACTIONS</code>. That list is all the LLM can choose from.</span></li>
+        <li><span><b>Write the edit</b> in <code>apply_fix_to_manifest()</code>. Keep it one bounded, deterministic change.</span></li>
+        <li><span><b>Add the signal</b>, if the failure needs one, in <code>manifests/alert-rules.yaml</code>.</span></li>
+      </ol>
+      <a class="btn" href="https://github.com/hritikmunde/llm-platform/blob/master/CONTRIBUTING.md">Read the contributing guide →</a>
+    </div>
+    <div class="term">
+      <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span><span class="t">agent/app.py</span></div>
+<pre><span class="c"># The LLM only CHOOSES one of these.</span>
+ALLOWED_ACTIONS = [
+    <span class="y">"lower_gpu_memory_utilization"</span>,
+    <span class="y">"lower_max_model_len"</span>,
+    <span class="y">"rollback_deployment"</span>,
+    <span class="y">"no_action_needed"</span>,
+<span class="g">+   "raise_memory_limit",</span>
+]
+
+<span class="v">def</span> apply_fix_to_manifest(text, action):
+    <span class="c"># ...existing actions...</span>
+<span class="g">+   if action == "raise_memory_limit":</span>
+<span class="g">+       m = re.search(r'(memory:\s*")(\d+)(Gi")', text)</span>
+<span class="g">+       if m:</span>
+<span class="g">+           new = str(int(m.group(2)) * 2)</span>
+<span class="g">+           return (text[:m.start()] + m.group(1) + new</span>
+<span class="g">+                   + m.group(3) + text[m.end():],</span>
+<span class="g">+                   f"raise memory {m.group(2)}Gi -> {new}Gi")</span></pre>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="wrap">
+    <p class="eyebrow">Architecture</p>
+    <h2>Infrastructure for AI, and AI for infrastructure</h2>
+    <p class="sub">A tainted GPU node group serves the model. A CPU node group runs observability, the chat UI, the agent, and ArgoCD. All of it is defined in Terraform and Kubernetes manifests.</p>
+    <figure>
+      <a href="assets/architecture.jpg" target="_blank" rel="noopener"><img src="assets/architecture.jpg" alt="Architecture diagram of llm-platform on Amazon EKS" width="2000" height="1310" loading="lazy"></a>
+      <figcaption><span>Cluster topology on Amazon EKS</span><span>click to enlarge</span></figcaption>
+    </figure>
+    <div class="stack" style="margin-top:20px">
+      <div class="tech"><b>vLLM</b><span>OpenAI-compatible serving</span></div>
+      <div class="tech"><b>Amazon EKS</b><span>CPU + GPU (g4dn / T4) nodes</span></div>
+      <div class="tech"><b>Terraform</b><span>VPC, cluster, IAM, ECR</span></div>
+      <div class="tech"><b>ArgoCD</b><span>GitOps auto-sync &amp; self-heal</span></div>
+      <div class="tech"><b>Prometheus + Grafana</b><span>TTFT, tokens/sec, GPU cache</span></div>
+      <div class="tech"><b>Python agent</b><span>Flask · k8s API · PyGithub</span></div>
+      <div class="tech"><b>AWS Bedrock</b><span>Claude Haiku via IRSA</span></div>
+      <div class="tech"><b>Open WebUI</b><span>Chat frontend</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <p class="eyebrow">Project status</p>
+    <h2>Where it stands today</h2>
+    <p class="sub">The core loop works end to end on real infrastructure. Here's what's solid and what isn't yet.</p>
+    <div class="grid2 status">
+      <div class="card ok">
+        <h3><span style="color:var(--green)">●</span> Works today</h3>
+        <ul>
+          <li>vLLM serving on EKS GPU nodes, deployed by ArgoCD</li>
+          <li>Prometheus metrics and alerts for pod-down and crash-loop</li>
+          <li>Alert → Bedrock diagnosis → auto-opened, merge-ready PR</li>
+          <li>Automatic fixes for bad GPU memory and context-length config</li>
+        </ul>
+      </div>
+      <div class="card lim">
+        <h3><span style="color:var(--amber)">●</span> Known limitations</h3>
+        <ul>
+          <li>AWS only for now (EKS + Bedrock)</li>
+          <li>Single model, single GPU replica</li>
+          <li><code>rollback_deployment</code> is diagnosed but not yet automated</li>
+          <li>No tagged releases yet. Track <code>master</code></li>
+        </ul>
+      </div>
+    </div>
+    <ul class="road">
+      <li><span class="st next">next</span>k6 load profiles with published throughput and latency benchmarks</li>
+      <li><span class="st next">next</span>Grafana dashboards for TTFT, tokens/sec, and GPU utilization under load</li>
+      <li><span class="st idea">idea</span>Traffic-driven autoscaling: scale on sustained load, not just when a pod goes down</li>
+      <li><span class="st idea">idea</span>RAG over past incidents so diagnoses can cite earlier fixes</li>
+      <li><span class="st idea">idea</span>Kueue-based GPU queueing for multi-tenant fair share</li>
+    </ul>
+  </div>
+</section>
+
+<section id="community">
+  <div class="wrap">
+    <p class="eyebrow">Community</p>
+    <h2>Get involved</h2>
+    <p class="sub">This is an early project, so every issue and PR has a big influence on where it goes.</p>
+    <div class="grid4">
+      <a class="card" href="https://github.com/hritikmunde/llm-platform/issues/new">
+        <span class="ic">bug</span><h3>Report an issue</h3><p>Something broke or the docs are unclear? Tell us what you ran and what happened.</p><span class="go">Open an issue →</span>
+      </a>
+      <a class="card" href="https://github.com/hritikmunde/llm-platform/issues/new?title=Failure%20mode%3A%20">
+        <span class="ic">idea</span><h3>Suggest a failure mode</h3><p>Describe an incident the agent should handle and how a human would fix it.</p><span class="go">Propose it →</span>
+      </a>
+      <a class="card" href="https://github.com/hritikmunde/llm-platform/blob/master/CONTRIBUTING.md">
+        <span class="ic">code</span><h3>Contribute</h3><p>Add a remediation action, an alert rule, or support for another cloud.</p><span class="go">Contributing guide →</span>
+      </a>
+      <a class="card" href="mailto:contact@llm-platform.tech">
+        <span class="ic">contact</span><h3>Talk to us</h3><p>Questions, collaborations, or anything else.</p><span class="go">contact@llm-platform.tech</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="/">
+          <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0f1828" stroke="#2a3a57"/><path d="M7 17h5l2-6 4 12 2-6h5" fill="none" stroke="#37d6b4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          llm-platform
+        </a>
+        <p>Open-source, self-healing LLM inference on Kubernetes.</p>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/hritikmunde/llm-platform">GitHub</a></li>
+          <li><a href="https://github.com/hritikmunde/llm-platform#readme">Documentation</a></li>
+          <li><a href="#roadmap">Roadmap</a></li>
+          <li><a href="https://github.com/hritikmunde/llm-platform/blob/master/LICENSE">License (MIT)</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Community</h4>
+        <ul>
+          <li><a href="https://github.com/hritikmunde/llm-platform/issues">Issues</a></li>
+          <li><a href="https://github.com/hritikmunde/llm-platform/blob/master/CONTRIBUTING.md">Contributing</a></li>
+          <li><a href="https://github.com/hritikmunde/llm-platform/blob/master/SECURITY.md">Security</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="mailto:contact@llm-platform.tech">contact@llm-platform.tech</a></li>
+          <li><a href="https://github.com/hritikmunde">@hritikmunde</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="legal">
+      <span>© 2026 llm-platform contributors · Released under the MIT License</span>
+      <span>Not affiliated with AWS, vLLM, or Anthropic.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.dataset.copy;
+      if (!text && btn.dataset.copyFrom) {
+        text = document.getElementById(btn.dataset.copyFrom).innerText
+          .split('\n').filter(function (l) { return l.trim() && l.trim()[0] !== '#'; })
+          .map(function (l) { return l.replace(/^\$ /, ''); }).join('\n');
+      }
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'copied';
+        setTimeout(function () { btn.textContent = 'copy'; }, 1500);
+      });
+    });
+  });
+  // live star count; hidden until the repo has at least one
+  fetch('https://api.github.com/repos/hritikmunde/llm-platform')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (d && d.stargazers_count > 0) {
+        var el = document.getElementById('stars');
+        el.textContent = '★ ' + d.stargazers_count;
+        el.hidden = false;
+      }
+    })
+    .catch(function () {});
+</script>
+</body>
+</html>
